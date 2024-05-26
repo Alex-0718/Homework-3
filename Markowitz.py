@@ -1,6 +1,7 @@
 """
 Package Import
 """
+
 import yfinance as yf
 import numpy as np
 import pandas as pd
@@ -66,7 +67,7 @@ class EqualWeightPortfolio:
         """
         TODO: Complete Task 1 Below
         """
-
+        self.portfolio_weights[assets] = 1 / len(assets)
         """
         TODO: Complete Task 1 Above
         """
@@ -117,7 +118,16 @@ class RiskParityPortfolio:
         """
         TODO: Complete Task 2 Below
         """
-
+        for current_index in range(self.lookback + 1, len(df_returns)):
+            lookback_window = df_returns.iloc[
+                current_index - self.lookback : current_index
+            ]
+            asset_volatilities = lookback_window[assets].std()
+            inv_weights = 1 / asset_volatilities
+            normalized_weights = inv_weights / inv_weights.sum()
+            self.portfolio_weights.loc[df_returns.index[current_index], assets] = (
+                normalized_weights.values
+            )
         """
         TODO: Complete Task 2 Above
         """
@@ -189,12 +199,12 @@ class MeanVariancePortfolio:
                 """
                 TODO: Complete Task 3 Below
                 """
-
                 # Sample Code: Initialize Decision w and the Objective
                 # NOTE: You can modify the following code
-                w = model.addMVar(n, name="w", ub=1)
-                model.setObjective(w.sum(), gp.GRB.MAXIMIZE)
-
+                weights = model.addMVar(shape=n, lb=0.0, name="w")
+                objective = (weights @ mu) - (gamma / 2) * (weights @ Sigma @ weights)
+                model.setObjective(objective, gp.GRB.MAXIMIZE)
+                model.addConstr(weights.sum() == 1.0, name="budget")
                 """
                 TODO: Complete Task 3 Below
                 """

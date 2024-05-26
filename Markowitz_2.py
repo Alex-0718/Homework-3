@@ -1,6 +1,7 @@
 """
 Package Import
 """
+
 import yfinance as yf
 import numpy as np
 import pandas as pd
@@ -9,6 +10,8 @@ import quantstats as qs
 import gurobipy as gp
 import warnings
 import argparse
+
+from scipy.optimize import minimize
 
 """
 Project Setup
@@ -74,6 +77,25 @@ class MyPortfolio:
         """
         TODO: Complete Task 4 Below
         """
+
+        constraints = {"type": "eq", "fun": lambda x: np.sum(x) - 1}
+        initial_weights = np.array([1 / len(assets) for _ in range(len(assets))])
+
+        def objective(weights=initial_weights):
+            expected_returns = self.returns[assets].mean()
+            cov_matrix = self.returns[assets].cov()
+
+            portfolio_return = np.sum(expected_returns * weights)
+            portfolio_volatility = np.sqrt(
+                np.dot(weights.T, np.dot(cov_matrix, weights))
+            )
+            sharpe_ratio = portfolio_return / portfolio_volatility
+
+            return -sharpe_ratio
+
+        self.portfolio_weights.loc[:, assets] = minimize(
+            objective, initial_weights, method="CG", constraints=constraints
+        ).x
 
         """
         TODO: Complete Task 4 Above
